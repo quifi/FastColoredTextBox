@@ -229,7 +229,7 @@ namespace FastColoredTextBoxNS
                     if (y != toLine && fromLine != toLine)
                         sb.AppendLine();
                 }
-                return sb.ToString();
+                return FastColoredTextBox.RemoveWideCharPlaceHolders(sb.ToString());
             }
         }
 
@@ -434,6 +434,7 @@ namespace FastColoredTextBoxNS
                 start.Offset(1, 0);
             else
                 start = new Place(0, start.iLine + 1);
+			start = tb.SkipWidthPlaceHolder(start);
 
             preferedPos = -1;
             end = start;
@@ -497,6 +498,7 @@ namespace FastColoredTextBoxNS
                     if (i == start.iLine) return;
                     start = new Place(tb[i].Count, i);
                 }
+				start = tb.SkipWidthPlaceHolderLeftwards(start);
             }
 
             if (!shift)
@@ -528,6 +530,7 @@ namespace FastColoredTextBoxNS
                     if (i == start.iLine) return;
                     start = new Place(0, i);
                 }
+				start = tb.SkipWidthPlaceHolder(start);
             }
 
             if (!shift)
@@ -569,6 +572,7 @@ namespace FastColoredTextBoxNS
                 if (start.iChar > finish + 1)
                     start.iChar = finish + 1;
             }
+			start = tb.SkipWidthPlaceHolder(start);
 
             if (!shift)
                 end = start;
@@ -606,6 +610,7 @@ namespace FastColoredTextBoxNS
                         start.iChar = finish + 1;
                 }
             }
+			start = tb.SkipWidthPlaceHolder(start);
 
             if (!shift)
                 end = start;
@@ -645,6 +650,7 @@ namespace FastColoredTextBoxNS
                 if (start.iChar > finish + 1)
                     start.iChar = finish + 1;
             }
+			start = tb.SkipWidthPlaceHolder(start);
 
             if (!shift)
                 end = start;
@@ -682,6 +688,7 @@ namespace FastColoredTextBoxNS
                         start.iChar = finish + 1;
                 }
             }
+			start = tb.SkipWidthPlaceHolder(start);
 
             if (!shift)
                 end = start;

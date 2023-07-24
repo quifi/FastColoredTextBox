@@ -113,6 +113,12 @@ namespace FastColoredTextBoxNS
                         deletedChar = ts[tb.Selection.Start.iLine][tb.Selection.Start.iChar - 1].c;
                         ts[tb.Selection.Start.iLine].RemoveAt(tb.Selection.Start.iChar - 1);
                         tb.Selection.Start = new Place(tb.Selection.Start.iChar - 1, tb.Selection.Start.iLine);
+						while (tb.Selection.Start.iChar > 0 && deletedChar == FastColoredTextBox.wideCharPlaceHolder)
+						{
+							deletedChar = ts[tb.Selection.Start.iLine][tb.Selection.Start.iChar - 1].c;
+							ts[tb.Selection.Start.iLine].RemoveAt(tb.Selection.Start.iChar - 1);
+							tb.Selection.Start = new Place(tb.Selection.Start.iChar - 1, tb.Selection.Start.iLine);
+						}
                     }
                     break;
                 case '\t':
@@ -128,6 +134,15 @@ namespace FastColoredTextBoxNS
                 default:
                     ts[tb.Selection.Start.iLine].Insert(tb.Selection.Start.iChar, new Char(c));
                     tb.Selection.Start = new Place(tb.Selection.Start.iChar + 1, tb.Selection.Start.iLine);
+					int widthMultiplier = tb.GetCharWidthMultiplier(c);
+					if (widthMultiplier > 1)
+					{
+						for (int i=1; i<widthMultiplier; ++i)
+						{
+							ts[tb.Selection.Start.iLine].Insert(tb.Selection.Start.iChar, new Char(FastColoredTextBox.wideCharPlaceHolder));
+							tb.Selection.Start = new Place(tb.Selection.Start.iChar + 1, tb.Selection.Start.iLine);
+						}
+					}
                     break;
             }
         }

@@ -31,6 +31,7 @@ namespace FastColoredTextBoxNS
         {
             try
             {
+				pattern = tb.AddWideCharPlaceHolders(pattern);	//not accurate for regex
                 RegexOptions opt = cbMatchCase.Checked ? RegexOptions.None : RegexOptions.IgnoreCase;
                 if (!cbRegex.Checked)
                     pattern = Regex.Escape(pattern);

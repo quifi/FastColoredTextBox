@@ -132,7 +132,7 @@ namespace FastColoredTextBoxNS
                 if (ForeBrush == null)
                     ForeBrush = new SolidBrush(range.tb.ForeColor);
 
-                if (range.tb.ImeAllowed)
+                if (false && range.tb.ImeAllowed)
                 {
                     //IME mode
                     for (int i = range.Start.iChar; i < range.End.iChar; i++)
@@ -154,7 +154,7 @@ namespace FastColoredTextBoxNS
                     for (int i = range.Start.iChar; i < range.End.iChar; i++)
                     {
                         //draw char
-                        gr.DrawString(line[i].c.ToString(), f, ForeBrush, x, y, stringFormat);
+                        gr.DrawString(FastColoredTextBox.ReplaceWideCharPlaceHoldersWithSpace(line[i].c.ToString()), f, ForeBrush, x, y, stringFormat);
                         x += dx;
                     }
                 }

@@ -45,6 +45,8 @@ namespace FastColoredTextBoxNS
     /// </summary>
     public partial class FastColoredTextBox : UserControl, ISupportInitialize
     {
+		internal const char wideCharPlaceHolder = '\u0000';
+		internal const string wideCharPlaceHolderStr = "\u0000";
         internal const int minLeftIndent = 8;
         private const int maxBracketSearchIterations = 1000;
         private const int maxLinesForFolding = 3000;
@@ -1380,7 +1382,7 @@ namespace FastColoredTextBoxNS
                     return "";
                 var sel = new Range(this);
                 sel.SelectAll();
-                return sel.Text;
+                return RemoveWideCharPlaceHolders(sel.Text);
             }
 
             set
@@ -2922,6 +2924,89 @@ namespace FastColoredTextBoxNS
 
             return new SizeF(sz2.Width - sz3.Width + 1, /*sz2.Height*/font.Height);
         }
+
+		private Font m_charWidthCacheFont;
+		private byte[] m_charWidthMulplierCache;
+
+		/// <summary>
+		/// calculate the width mupliplier of char, compare to normal char
+		/// Mupliplier of CJK chars is typically 2
+		/// </summary>
+        public int GetCharWidthMultiplier(char c)
+        {
+			Font font = Font;
+			if (font != m_charWidthCacheFont)
+			{
+				m_charWidthCacheFont = font;
+				m_charWidthMulplierCache = new byte[char.MaxValue+1];
+			}
+			byte multiplier = m_charWidthMulplierCache[c];
+			if (multiplier > 0)
+				return (int)multiplier;
+
+            Size sz2 = TextRenderer.MeasureText("<" + c.ToString() + ">", Font);
+            Size sz3 = TextRenderer.MeasureText("<>", Font);
+
+			int width = sz2.Width - sz3.Width;
+            multiplier = (byte)((width + CharWidth - 1) / CharWidth);
+			m_charWidthMulplierCache[c] = multiplier;
+			return multiplier;
+        }
+
+		public string AddWideCharPlaceHolders(string str)
+		{
+			StringBuilder strBuilder = new StringBuilder();
+			foreach (char c in str)
+			{
+				strBuilder.Append(c);
+				int widthMultiplier = GetCharWidthMultiplier(c);
+				if (widthMultiplier > 1)
+				{
+					for (int i=1; i<widthMultiplier; ++i)
+						strBuilder.Append(wideCharPlaceHolder);
+				}
+			}
+			return strBuilder.ToString();
+		}
+
+		public static string RemoveWideCharPlaceHolders(string str)
+		{
+			return str.Replace(wideCharPlaceHolderStr, String.Empty);
+		}
+
+		public static string ReplaceWideCharPlaceHoldersWithSpace(string str)
+		{
+			return str.Replace(wideCharPlaceHolder, ' ');
+		}
+
+		/// <summary>
+		/// Check whether place sits within char and its width place holder. Such places need be avoid
+		/// </summary>
+		public bool IsOnWidthPlaceHolder(Place place)
+		{
+			return place.iLine < LinesCount && place.iChar < this[place.iLine].Count && this[place.iLine][place.iChar].c == wideCharPlaceHolder;
+		}
+
+		/// <summary>
+		/// skip width place holders, so that it sits on 'whole char' boundary
+		/// </summary>
+		public Place SkipWidthPlaceHolder(Place place)
+		{
+			while (IsOnWidthPlaceHolder(place))
+				++place.iChar;
+			return place;
+		}
+
+		/// <summary>
+		/// skip width place holders, but move left
+		/// </summary>
+		public Place SkipWidthPlaceHolderLeftwards(Place place)
+		{
+			while (IsOnWidthPlaceHolder(place))
+				--place.iChar;
+			return place;
+		}
+
 
         [DllImport("Imm32.dll")]
         public static extern IntPtr ImmGetContext(IntPtr hWnd);
@@ -5875,7 +5960,7 @@ namespace FastColoredTextBoxNS
             for (int i = p.iChar; i < lines[p.iLine].Count; i++)
             {
                 char c = lines[p.iLine][i].c;
-                if (char.IsLetterOrDigit(c) || c == '_')
+                if (char.IsLetterOrDigit(c) || c == '_' || c == wideCharPlaceHolder)
                     toX = i + 1;
                 else
                     break;
@@ -5884,7 +5969,7 @@ namespace FastColoredTextBoxNS
             for (int i = p.iChar - 1; i >= 0; i--)
             {
                 char c = lines[p.iLine][i].c;
-                if (char.IsLetterOrDigit(c) || c == '_')
+                if (char.IsLetterOrDigit(c) || c == '_' || c == wideCharPlaceHolder)
                     fromX = i;
                 else
                     break;
@@ -5964,7 +6049,7 @@ namespace FastColoredTextBoxNS
             Console.WriteLine("PointToPlace: " + sw.ElapsedMilliseconds);
 #endif
 
-            return new Place(x, iLine);
+            return SkipWidthPlaceHolder(new Place(x, iLine));
         }
 
         private Place PointToPlaceSimple(Point point)
